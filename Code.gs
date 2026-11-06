@@ -266,23 +266,52 @@ function findOrderRow_(sh, sheetName, group) {
 }
 
 function deletePhoto(pin, photoId) {
+  return deletePhotos(pin, [photoId]).deleted > 0;
+}
+
+/**
+ * ลบรูปหลายรูปพร้อมกัน (ใช้กับปุ่ม "ลบรูปทั้งหมดของรอบนี้")
+ * คืนค่า { deleted: จำนวนที่ลบ, permanent: ลบถาวรหรือแค่ย้ายไปถังขยะ }
+ */
+function deletePhotos(pin, photoIds) {
   requirePin_(pin);
+  const want = {};
+  (photoIds || []).slice(0, 500).forEach(id => { want[String(id)] = true; });
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     const sh = photoSheet_();
-    const ids = sh.getRange(1, 1, Math.max(sh.getLastRow(), 1), 2).getValues();
-    for (let i = ids.length - 1; i >= 1; i--) {
-      if (ids[i][0] !== photoId) continue;
-      const fileId = sh.getRange(i + 1, 4).getValue();
-      try { DriveApp.getFileById(fileId).setTrashed(true); } catch (e) { /* ไฟล์ถูกลบไปแล้ว */ }
-      sh.deleteRow(i + 1);
-      return true;
+    const last = sh.getLastRow();
+    if (last < 2) return { deleted: 0, permanent: false };
+    const vals = sh.getRange(2, 1, last - 1, 4).getValues();
+    let deleted = 0, permanent = true;
+    // ลบจากล่างขึ้นบน เลขแถวจะได้ไม่เลื่อน
+    for (let i = vals.length - 1; i >= 0; i--) {
+      if (!want[String(vals[i][0])]) continue;
+      if (!removeDriveFile_(String(vals[i][3]))) permanent = false;
+      sh.deleteRow(i + 2);
+      deleted++;
     }
-    return false;
+    return { deleted: deleted, permanent: permanent };
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * ลบไฟล์ใน Drive: ถ้าเปิด Drive API (บริการขั้นสูง) ไว้ จะลบถาวรเลย คืนพื้นที่ทันที
+ * ถ้าไม่ได้เปิด จะย้ายไปถังขยะ (Drive ลบถาวรให้เองใน 30 วัน) — คืน true ถ้าลบถาวร
+ */
+function removeDriveFile_(fileId) {
+  if (!fileId) return true;
+  try {
+    if (typeof Drive !== 'undefined' && Drive.Files && Drive.Files.remove) {
+      Drive.Files.remove(fileId);
+      return true;
+    }
+  } catch (e) { /* ใช้วิธีย้ายไปถังขยะแทน */ }
+  try { DriveApp.getFileById(fileId).setTrashed(true); } catch (e) { /* ไฟล์ถูกลบไปแล้ว */ }
+  return false;
 }
 
 /* ============================================================

@@ -57,6 +57,8 @@
   .step-sub { font-size: 11px; line-height: 1.2; }
   .step-date { font-size: 11px; color: var(--ok); }
   .track-hint { font-size: 12px; color: var(--muted); }
+  .btn-danger { background: var(--bad-soft); color: var(--bad); font-size: 13px; padding: 2px 10px; margin-top: 6px; }
+  .btn-danger:disabled { opacity: .6; cursor: wait; }
   .btn-edit { background: var(--brand-soft); color: var(--brand); font-size: 13px; padding: 2px 10px; }
   #orderForm { position: fixed; inset: 0; background: #0007; display: none; align-items: center; justify-content: center; z-index: 55; padding: 16px; }
   #orderForm.on { display: flex; }
@@ -187,6 +189,9 @@ function render() {
 
 const isArrived = g => ((g.order && g.order.status) || 0) >= STEPS.length ? 1 : 0;
 
+// รูปทุกรูปของรอบ: รูปรอบ + หลักฐานการสั่ง + รูปของแต่ละคน
+const groupPhotoIds = g => [].concat(g.photos, (g.order && g.order.photos) || [], ...g.rows.map(r => r.photos)).map(p => p.id);
+
 function groupHtml(g, gi, rows) {
   const filled = g.rows.filter(r => !r.available);
   const paid = filled.filter(r => badgeClass('pay', r.pay) === 'b-ok').length;
@@ -203,6 +208,9 @@ function groupHtml(g, gi, rows) {
         (free ? '<span class="stat">ว่าง ' + free + '</span>' : '') +
         '<span class="stat">จ่ายครบ ' + paid + '/' + filled.length + '</span>' +
         '<span class="stat">ส่งแล้ว ' + sent + '/' + filled.length + '</span></div>' +
+        (state.data.isAdmin && groupPhotoIds(g).length
+          ? '<button class="btn-danger" data-clear-group="' + gi + '" title="ลบรูปทุกรูปของรอบนี้ออกจาก Drive">🗑 ลบรูปทั้งหมดของรอบนี้ (' + groupPhotoIds(g).length + ' รูป)</button>'
+          : '') +
         '<div class="glinks">' + g.links.map(u => safeUrl(u) ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u) + '</a>' : '').join('') + '</div>' +
         (g.info.length ? '<div class="ginfo">' + esc(g.info.join('\n')) + '</div>' : '') +
       '</div>' +
@@ -327,6 +335,7 @@ document.addEventListener('click', e => {
   if (t.dataset.add) { const [g, r] = t.dataset.add.split(':').map(Number); pick({ g, r }); return; }
   if (t.dataset.addGroup) { pick({ g: Number(t.dataset.addGroup), group: true }); return; }
   if (t.dataset.addOrder) { pick({ g: Number(t.dataset.addOrder), group: true, kind: 'order' }); return; }
+  if (t.dataset.clearGroup) { clearGroupPhotos(Number(t.dataset.clearGroup), t); return; }
   const stepBtn = t.closest('[data-step]');
   if (stepBtn) { const [g, n] = stepBtn.dataset.step.split(':').map(Number); setStep(g, n); return; }
   if (t.dataset.editOrder) { openOrderForm(Number(t.dataset.editOrder)); return; }
@@ -430,6 +439,28 @@ async function setStep(gi, n) {
     render();
     toast(status ? 'สถานะ: ' + STEPS[status - 1].name : 'ล้างสถานะแล้ว');
   } catch (e) { toast(e.message, 5000); }
+}
+
+async function clearGroupPhotos(gi, btn) {
+  const g = state.data.sheets[state.sheet].groups[gi];
+  const ids = groupPhotoIds(g);
+  if (!ids.length) return;
+  const arrived = ((g.order && g.order.status) || 0) >= STEPS.length;
+  if (!confirm('ลบรูปทั้งหมดของรอบ "' + g.name + '" (' + ids.length + ' รูป) ออกจาก Drive?\n' +
+    (arrived ? '' : '⚠️ รอบนี้ยังไม่ถึงขั้น "ถึงมือ"\n') +
+    'ข้อมูลร้าน/ลิงก์/สถานะยังอยู่ แต่รูปจะกู้คืนจากหน้าเว็บไม่ได้')) return;
+  btn.disabled = true;
+  let done = 0, permanent = true;
+  try {
+    // ทีละ 50 รูป กันหมดเวลา และให้เห็นความคืบหน้า
+    for (let i = 0; i < ids.length; i += 50) {
+      toast('กำลังลบรูป ' + Math.min(i + 50, ids.length) + '/' + ids.length + '…', 60000);
+      const res = await call('deletePhotos', state.pin, ids.slice(i, i + 50));
+      done += res.deleted; permanent = permanent && res.permanent;
+    }
+  } catch (e) { toast('ลบไม่ครบ: ' + e.message, 6000); }
+  await load();
+  toast('ลบแล้ว ' + done + ' รูป' + (permanent ? '' : ' (อยู่ในถังขยะ Drive จะถูกลบถาวรใน 30 วัน)'), 6000);
 }
 
 async function removePhoto(id) {
