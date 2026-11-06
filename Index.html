@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f2fb; --card: #fff; --ink: #262338; --muted: #7a7690; --line: #e4e0f0;
+    --brand: #5b4fd6; --brand-soft: #ece9ff;
+    --ok: #1f9d55; --ok-soft: #dcf5e7; --warn: #b7791f; --warn-soft: #fdf1d6;
+    --wait: #8b3fd1; --wait-soft: #f1e4ff; --info: #2563eb; --info-soft: #dde9ff;
+    --bad: #d33; --bad-soft: #fde2e2;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Sarabun', system-ui, sans-serif; background: var(--bg); color: var(--ink); font-size: 15px; }
+  header { position: sticky; top: 0; z-index: 10; background: var(--brand); color: #fff; padding: 12px 16px; box-shadow: 0 2px 8px #0002; }
+  .bar { max-width: 1100px; margin: 0 auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  h1 { font-size: 20px; margin: 0; flex: 1; white-space: nowrap; }
+  .search { flex: 1 1 220px; max-width: 360px; padding: 8px 12px; border-radius: 999px; border: 0; font: inherit; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 8px; padding: 6px 12px; }
+  .btn-light { background: #fff3; color: #fff; }
+  .btn-light:hover { background: #fff5; }
+  .tabs { max-width: 1100px; margin: 12px auto 0; padding: 0 16px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 6px 16px; }
+  .tab.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+  main { max-width: 1100px; margin: 0 auto; padding: 12px 16px 60px; }
+  .group { background: var(--card); border-radius: 16px; margin: 14px 0; overflow: hidden; box-shadow: 0 1px 3px #0001; }
+  .ghead { display: flex; gap: 14px; padding: 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .covers { display: flex; gap: 8px; overflow-x: auto; max-width: 100%; }
+  .covers .ph { width: 120px; height: 120px; }
+  .gmeta { flex: 1; min-width: 200px; }
+  .gmeta h2 { margin: 0 0 6px; font-size: 19px; }
+  .stats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+  .stat { background: var(--brand-soft); color: var(--brand); border-radius: 999px; padding: 2px 10px; font-size: 13px; }
+  .glinks a, .contacts a { color: var(--brand); word-break: break-all; font-size: 13px; display: block; }
+  .ginfo { color: var(--muted); font-size: 13px; white-space: pre-wrap; }
+  .order { margin: 0 14px 0; padding: 10px 12px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+  .order-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .order-title { font-weight: 700; }
+  .order-shop { font-size: 14px; }
+  .order-shop a { color: var(--brand); word-break: break-all; }
+  .order-empty { color: var(--muted); font-size: 13px; }
+  .track { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 4px; }
+  .step { position: relative; text-align: center; padding: 0 2px; color: var(--muted); }
+  .step-btn { display: block; width: 100%; background: none; border: 0; border-radius: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
+  .step-btn:hover .dot { box-shadow: 0 0 0 3px var(--brand-soft); }
+  .date-edit { font: inherit; font-size: 11px; color: var(--ok); border: 1px dashed var(--ok); border-radius: 6px; padding: 1px 2px; background: var(--card); max-width: 100%; margin-top: 2px; cursor: pointer; }
+  .step::before { content: ''; position: absolute; top: 15px; left: -50%; width: 100%; height: 3px; background: var(--line); }
+  .step:first-child::before { display: none; }
+  .step.done::before { background: var(--ok); }
+  .dot { position: relative; z-index: 1; width: 32px; height: 32px; margin: 0 auto 4px; border-radius: 50%; background: var(--card); border: 3px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .step.done .dot { border-color: var(--ok); background: var(--ok-soft); }
+  .step.now .dot { border-color: var(--ok); background: var(--ok); }
+  .step-name { font-size: 13px; font-weight: 600; line-height: 1.2; }
+  .step.done .step-name { color: var(--ink); }
+  .step-sub { font-size: 11px; line-height: 1.2; }
+  .step-date { font-size: 11px; color: var(--ok); }
+  .track-hint { font-size: 12px; color: var(--muted); }
+  .btn-edit { background: var(--brand-soft); color: var(--brand); font-size: 13px; padding: 2px 10px; }
+  #orderForm { position: fixed; inset: 0; background: #0007; display: none; align-items: center; justify-content: center; z-index: 55; padding: 16px; }
+  #orderForm.on { display: flex; }
+  #orderForm form { background: var(--card); border-radius: 14px; padding: 16px; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 10px; }
+  #orderForm h3 { margin: 0; font-size: 17px; }
+  #orderForm label { font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+  #orderForm input { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); }
+  .form-btns { display: flex; justify-content: flex-end; gap: 8px; }
+  .btn-main { background: var(--brand); color: #fff; }
+  .btn-sub { background: #eee; color: var(--ink); }
+  .people { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; padding: 14px; }
+  .person { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .person.free { border-style: dashed; background: #faf9ff; }
+  .item { font-weight: 700; }
+  .owner { color: var(--muted); font-size: 14px; }
+  .owner b { color: var(--ink); font-weight: 600; }
+  .badges { display: flex; gap: 4px; flex-wrap: wrap; }
+  .badge { font-size: 12px; border-radius: 999px; padding: 1px 9px; background: #eee; color: #555; }
+  .b-ok { background: var(--ok-soft); color: var(--ok); }
+  .b-warn { background: var(--warn-soft); color: var(--warn); }
+  .b-wait { background: var(--wait-soft); color: var(--wait); }
+  .b-info { background: var(--info-soft); color: var(--info); }
+  .b-bad { background: var(--bad-soft); color: var(--bad); }
+  .note { font-size: 13px; color: var(--muted); white-space: pre-wrap; }
+  .admin-box { font-size: 13px; background: #f7f6fb; border-radius: 8px; padding: 6px 8px; }
+  .photos { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ph { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: hidden; background: #eee; flex: none; }
+  .ph img { width: 100%; height: 100%; object-fit: cover; cursor: zoom-in; display: block; }
+  .ph .del { position: absolute; top: 2px; right: 2px; background: #000a; color: #fff; border-radius: 50%; width: 22px; height: 22px; padding: 0; line-height: 22px; font-size: 13px; }
+  .add { width: 72px; height: 72px; border: 2px dashed var(--line); border-radius: 8px; background: none; color: var(--muted); font-size: 12px; padding: 0; }
+  .add:hover { border-color: var(--brand); color: var(--brand); }
+  .empty, .loading { text-align: center; color: var(--muted); padding: 40px 0; }
+  #lightbox { position: fixed; inset: 0; background: #000d; display: none; align-items: center; justify-content: center; z-index: 50; flex-direction: column; gap: 8px; }
+  #lightbox.on { display: flex; }
+  #lightbox img { max-width: 95vw; max-height: 85vh; border-radius: 8px; }
+  #lightbox .cap { color: #fff; }
+  #toast { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 8px 16px; border-radius: 8px; display: none; z-index: 60; max-width: 90vw; }
+  .muted { color: var(--muted); }
+  @media (max-width: 520px) { .people { grid-template-columns: 1fr; padding: 10px; } .covers .ph { width: 96px; height: 96px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1><?= title ?></h1>
+    <input id="q" class="search" type="search" placeholder="ค้นหาชื่อ / ของที่หาร">
+    <button id="adminBtn" class="btn-light">🔒 แอดมิน</button>
+  </div>
+</header>
+<div id="tabs" class="tabs"></div>
+<main id="main"><div class="loading">กำลังโหลด…</div></main>
+<div id="lightbox"><img alt=""><div class="cap"></div></div>
+<div id="toast"></div>
+<div id="orderForm">
+  <form>
+    <h3>🧾 หลักฐานการสั่ง — <span class="og"></span></h3>
+    <label>สั่งที่ร้าน<input name="shop" maxlength="200" placeholder="เช่น ร้าน Animate / Mercari / ฝากหิ้ว ..."></label>
+    <label>ลิงก์ (ร้าน / ออเดอร์ / โพสต์)<input name="url" type="url" maxlength="1000" placeholder="https://..."></label>
+    <div class="form-btns"><button type="button" class="btn-sub" data-close-order>ยกเลิก</button><button type="submit" class="btn-main">บันทึก</button></div>
+  </form>
+</div>
+<input id="file" type="file" accept="image/*" multiple hidden>
+
+<script>
+const state = { data: null, sheet: 0, pin: '', q: '', target: null };
+try { state.pin = sessionStorage.getItem('harnPin') || ''; } catch (e) {}
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const thumb = (id, w) => 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w' + (w || 400);
+const safeUrl = u => /^https?:\/\//i.test(u) ? u : '';
+
+function call(fn, ...args) {
+  return new Promise((ok, fail) => google.script.run.withSuccessHandler(ok).withFailureHandler(fail)[fn](...args));
+}
+function toast(msg, ms) {
+  const t = $('#toast'); t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', ms || 3000);
+}
+
+async function load() {
+  try {
+    state.data = await call('getData', state.pin);
+    if (state.pin && !state.data.isAdmin) { state.pin = ''; try { sessionStorage.removeItem('harnPin'); } catch (e) {} }
+    try { const s = Number(localStorage.getItem('harnSheet')); if (s < state.data.sheets.length) state.sheet = s; } catch (e) {}
+    render();
+  } catch (e) {
+    $('#main').innerHTML = '<div class="empty">โหลดข้อมูลไม่สำเร็จ: ' + esc(e.message) + '</div>';
+  }
+}
+
+function badgeClass(kind, v) {
+  if (!v) return '';
+  if (kind === 'sent') return /แล้ว|ได้รับ|done/i.test(v) ? 'b-info' : 'b-wait';
+  if (kind === 'pay') {
+    if (/มัดจำ|บางส่วน|เหลือ|ขาด/.test(v)) return 'b-warn';
+    if (/เรียบร้อย|ครบ|จ่ายแล้ว|โอนแล้ว|โอนเต็ม|paid/i.test(v)) return 'b-ok';
+    if (/รอ/.test(v)) return 'b-wait';
+    if (/ค้าง|หนี้|ยกเลิก/.test(v)) return 'b-bad';
+  }
+  return '';
+}
+
+function matches(r, g, q) {
+  if (!q) return true;
+  return [r.item, r.owner, g.name, r.note].join(' ').toLowerCase().indexOf(q) >= 0;
+}
+
+function render() {
+  const d = state.data;
+  $('#adminBtn').textContent = d.isAdmin ? '🔓 ออกจากแอดมิน' : '🔒 แอดมิน';
+  $('#tabs').innerHTML = d.sheets.length > 1 ? d.sheets.map((s, i) =>
+    '<button class="tab' + (i === state.sheet ? ' on' : '') + '" data-tab="' + i + '">' + esc(s.name) + '</button>').join('') : '';
+
+  const sheet = d.sheets[state.sheet];
+  if (!sheet) { $('#main').innerHTML = '<div class="empty">ไม่มีข้อมูล</div>'; return; }
+  const q = state.q.toLowerCase();
+  // รอบที่ของยังไม่ถึงมือขึ้นก่อนเสมอ (ภายในกลุ่มเดียวกันเรียงตามชีต)
+  const ordered = sheet.groups.map((g, gi) => ({ g, gi }))
+    .sort((a, b) => isArrived(a.g) - isArrived(b.g));
+  const html = ordered.map(({ g, gi }) => {
+    const rows = g.rows.map((r, ri) => ({ r, ri })).filter(x => matches(x.r, g, q));
+    if (q && !rows.length && g.name.toLowerCase().indexOf(q) < 0) return '';
+    return groupHtml(g, gi, rows);
+  }).join('');
+  $('#main').innerHTML = html || '<div class="empty">' + (q ? 'ไม่พบ "' + esc(state.q) + '"' : 'ยังไม่มีรายการ') + '</div>';
+}
+
+const isArrived = g => ((g.order && g.order.status) || 0) >= STEPS.length ? 1 : 0;
+
+function groupHtml(g, gi, rows) {
+  const filled = g.rows.filter(r => !r.available);
+  const paid = filled.filter(r => badgeClass('pay', r.pay) === 'b-ok').length;
+  const sent = filled.filter(r => badgeClass('sent', r.sent) === 'b-info').length;
+  const free = g.rows.length - filled.length;
+  const covers = g.covers.map(u => '<div class="ph"><img loading="lazy" src="' + esc(u) + '" data-full="' + esc(u) + '"></div>').join('')
+    + g.photos.map(p => photoHtml(p, true)).join('')
+    + (state.data.isAdmin ? '<button class="add" data-add-group="' + gi + '">＋ รูปรอบ</button>' : '');
+  return '<section class="group">' +
+    '<div class="ghead">' +
+      (covers ? '<div class="covers" data-g="' + gi + '">' + covers + '</div>' : '') +
+      '<div class="gmeta"><h2>' + esc(g.name) + '</h2>' +
+        '<div class="stats"><span class="stat">' + filled.length + ' คน</span>' +
+        (free ? '<span class="stat">ว่าง ' + free + '</span>' : '') +
+        '<span class="stat">จ่ายครบ ' + paid + '/' + filled.length + '</span>' +
+        '<span class="stat">ส่งแล้ว ' + sent + '/' + filled.length + '</span></div>' +
+        '<div class="glinks">' + g.links.map(u => safeUrl(u) ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u) + '</a>' : '').join('') + '</div>' +
+        (g.info.length ? '<div class="ginfo">' + esc(g.info.join('\n')) + '</div>' : '') +
+      '</div>' +
+    '</div>' +
+    orderHtml(g, gi) +
+    '<div class="people">' + rows.map(x => personHtml(x.r, gi, x.ri)).join('') + '</div>' +
+  '</section>';
+}
+
+// ขั้นติดตามสถานะ (ลำดับต้องตรงกับ ORDER_STEPS ใน Code.gs)
+const STEPS = [
+  { icon: '📝', name: 'สั่งแล้ว', sub: 'ฝากร้านกด / สั่งเอง' },
+  { icon: '✈️', name: 'ของกำลังมา', sub: '' },
+  { icon: '🛬', name: 'ถึงไทย', sub: 'รอร้านจัดส่งมา' },
+  { icon: '📦', name: 'ถึงมือ', sub: 'ของพร้อมส่ง' },
+];
+// ISO -> yyyy-mm-dd ตามเวลาเครื่อง (สำหรับ <input type="date">)
+const toInputDate = iso => {
+  const d = iso ? new Date(iso) : null;
+  if (!d || isNaN(d)) return '';
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+const fmtDate = iso => { try { return iso ? new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : ''; } catch (e) { return ''; } };
+
+function trackHtml(o, gi, admin) {
+  const status = o.status || 0;
+  const steps = STEPS.map((st, k) => {
+    const n = k + 1;
+    const cls = 'step' + (n <= status ? ' done' : '') + (n === status ? ' now' : '');
+    const date = (o.dates || [])[k] || '';
+    const inner = '<div class="dot">' + (n <= status ? st.icon : n) + '</div>' +
+      '<div class="step-name">' + st.name + '</div>' +
+      (st.sub ? '<div class="step-sub">' + st.sub + '</div>' : '');
+    if (!admin) {
+      return '<div class="' + cls + '">' + inner +
+        (n <= status && date ? '<div class="step-date">' + esc(fmtDate(date)) + '</div>' : '') + '</div>';
+    }
+    // แอดมิน: กดวงกลม = เปลี่ยนสถานะ, กดวันที่ = แก้วันที่ของขั้นนั้น
+    return '<div class="' + cls + '">' +
+      '<button class="step-btn" data-step="' + gi + ':' + n + '" title="ตั้งสถานะเป็น ' + st.name + '">' + inner + '</button>' +
+      (n <= status ? '<input type="date" class="date-edit" title="แก้วันที่" data-date="' + gi + ':' + k + '" value="' + toInputDate(date) + '">' : '') +
+    '</div>';
+  }).join('');
+  return '<div class="order-title">🚚 ติดตามสถานะ</div><div class="track">' + steps + '</div>' +
+    (admin ? '<div class="track-hint">กดวงกลมเพื่อเปลี่ยนสถานะ (กดขั้นปัจจุบันซ้ำ = ถอยกลับ 1 ขั้น) · กดวันที่เพื่อแก้วันที่</div>' : '');
+}
+
+function orderHtml(g, gi) {
+  const o = g.order || { shop: '', url: '', photos: [], status: 0 };
+  const admin = state.data.isAdmin;
+  const hasProof = admin || o.shop || o.url || o.photos.length;
+  const url = safeUrl(o.url);
+  const shop = o.shop || url
+    ? '<div class="order-shop">🏪 สั่งที่ร้าน: <b>' + esc(o.shop || '-') + '</b>' +
+      (url ? ' · <a href="' + esc(url) + '" target="_blank" rel="noopener">🔗 ' + esc(url) + '</a>' : '') + '</div>'
+    : '<div class="order-empty">ยังไม่ได้ใส่ข้อมูลร้าน</div>';
+  const photos = o.photos.map(p => photoHtml(p, true)).join('') +
+    (admin ? '<button class="add" data-add-order="' + gi + '">＋ หลักฐาน</button>' : '');
+  return '<div class="order">' +
+    (hasProof
+      ? '<div class="order-head"><span class="order-title">🧾 หลักฐานการสั่ง</span>' +
+          (admin ? '<button class="btn-edit" data-edit-order="' + gi + '">✏️ แก้ไขร้าน/ลิงก์</button>' : '') + '</div>' +
+        shop +
+        (photos ? '<div class="photos">' + photos + '</div>' : '')
+      : '') +
+    trackHtml(o, gi, admin) +
+  '</div>';
+}
+
+function personHtml(r, gi, ri) {
+  const admin = state.data.isAdmin;
+  const badges = [
+    r.pay && '<span class="badge ' + badgeClass('pay', r.pay) + '">💰 ' + esc(r.pay) + '</span>',
+    r.shipping && '<span class="badge">📦 ' + esc(r.shipping) + '</span>',
+    r.sent && '<span class="badge ' + badgeClass('sent', r.sent) + '">🚚 ' + esc(r.sent) + '</span>',
+  ].filter(Boolean).join('');
+  let adminBox = '';
+  if (!r.available) {
+    const parts = [];
+    (r.contacts || []).forEach(c => parts.push(safeUrl(c.url)
+      ? '<a href="' + esc(c.url) + '" target="_blank" rel="noopener">' + esc(c.text || c.url) + '</a>'
+      : '<div>' + esc(c.text) + '</div>'));
+    if (r.code) parts.push('<div>🎟 ' + esc(r.code) + '</div>');
+    // สลิป: server ส่งมาให้เฉพาะแอดมิน
+    if (r.slipText) parts.push('<div>🧾 ' + esc(r.slipText) + '</div>');
+    if (r.slipImage) parts.push('<div>🧾 สลิป: <div class="ph"><img loading="lazy" src="' + esc(r.slipImage) + '" data-full="' + esc(r.slipImage) + '"></div></div>');
+    if (parts.length) adminBox = '<div class="admin-box contacts">' + parts.join('') + '</div>';
+  }
+  const photos = r.photos.map(p => photoHtml(p, admin)).join('') +
+    (admin ? '<button class="add" data-add="' + gi + ':' + ri + '">＋ แนบรูป</button>' : '');
+  return '<div class="person' + (r.available ? ' free' : '') + '">' +
+    '<div class="item">' + esc(r.item) + '</div>' +
+    '<div class="owner">' + (r.available ? '✨ ยังว่าง' : '👤 <b>' + esc(r.owner || '(ไม่ระบุชื่อ)') + '</b>') + '</div>' +
+    (badges ? '<div class="badges">' + badges + '</div>' : '') +
+    (r.note ? '<div class="note">📝 ' + esc(r.note) + '</div>' : '') +
+    adminBox +
+    (photos ? '<div class="photos">' + photos + '</div>' : '') +
+  '</div>';
+}
+
+function photoHtml(p, canDelete) {
+  return '<div class="ph"><img loading="lazy" src="' + thumb(p.fileId, 300) + '" data-full="' + thumb(p.fileId, 2000) +
+    '" data-cap="' + esc(p.caption) + '" alt="' + esc(p.caption) + '">' +
+    (canDelete && state.data.isAdmin ? '<button class="del" title="ลบรูป" data-del="' + esc(p.id) + '">✕</button>' : '') + '</div>';
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const t = e.target;
+  if (t.dataset.tab != null) {
+    state.sheet = Number(t.dataset.tab);
+    try { localStorage.setItem('harnSheet', state.sheet); } catch (err) {}
+    render(); return;
+  }
+  if (t.dataset.full) {
+    const lb = $('#lightbox');
+    lb.querySelector('img').src = t.dataset.full;
+    lb.querySelector('.cap').textContent = t.dataset.cap || '';
+    lb.classList.add('on'); return;
+  }
+  if (t.closest('#lightbox')) { $('#lightbox').classList.remove('on'); return; }
+  if (t.dataset.add) { const [g, r] = t.dataset.add.split(':').map(Number); pick({ g, r }); return; }
+  if (t.dataset.addGroup) { pick({ g: Number(t.dataset.addGroup), group: true }); return; }
+  if (t.dataset.addOrder) { pick({ g: Number(t.dataset.addOrder), group: true, kind: 'order' }); return; }
+  const stepBtn = t.closest('[data-step]');
+  if (stepBtn) { const [g, n] = stepBtn.dataset.step.split(':').map(Number); setStep(g, n); return; }
+  if (t.dataset.editOrder) { openOrderForm(Number(t.dataset.editOrder)); return; }
+  if (t.dataset.closeOrder != null || t.id === 'orderForm') { $('#orderForm').classList.remove('on'); return; }
+  if (t.dataset.del) { removePhoto(t.dataset.del); return; }
+});
+
+$('#q').addEventListener('input', e => { state.q = e.target.value.trim(); render(); });
+
+$('#adminBtn').addEventListener('click', async () => {
+  if (state.data && state.data.isAdmin) {
+    state.pin = ''; try { sessionStorage.removeItem('harnPin'); } catch (e) {}
+    toast('ออกจากโหมดแอดมินแล้ว'); load(); return;
+  }
+  const pin = prompt('รหัสแอดมิน');
+  if (!pin) return;
+  try {
+    if (!(await call('login', pin))) { toast('รหัสไม่ถูกต้อง'); return; }
+    state.pin = pin; try { sessionStorage.setItem('harnPin', pin); } catch (e) {}
+    toast('เข้าโหมดแอดมินแล้ว — กด ＋ เพื่อแนบรูป');
+    load();
+  } catch (e) { toast(e.message); }
+});
+
+function pick(target) { state.target = target; $('#file').value = ''; $('#file').click(); }
+
+$('#file').addEventListener('change', async e => {
+  const files = Array.from(e.target.files || []);
+  const target = state.target;
+  if (!files.length || !target) return;
+  const sheet = state.data.sheets[state.sheet];
+  const g = sheet.groups[target.g];
+  const r = target.group ? null : g.rows[target.r];
+  const caption = files.length === 1 ? (prompt('คำอธิบายรูป (เว้นว่างได้)') || '') : '';
+  for (let i = 0; i < files.length; i++) {
+    toast('กำลังอัปโหลด ' + (i + 1) + '/' + files.length + '…', 60000);
+    try {
+      const dataUrl = await shrink(files[i]);
+      const req = { sheet: sheet.name, dataUrl, caption };
+      if (r) Object.assign(req, { rowId: r.rowId, row: r.row, item: r.item });
+      else Object.assign(req, { group: g.name, kind: target.kind || '' });
+      const res = await call('uploadPhoto', state.pin, req);
+      if (r) { r.rowId = res.rowId; r.photos.push(res.photo); }
+      else (target.kind === 'order' ? g.order.photos : g.photos).push(res.photo);
+      render();
+    } catch (err) { toast('อัปโหลดไม่สำเร็จ: ' + err.message, 5000); return; }
+  }
+  toast('แนบรูปเรียบร้อย');
+});
+
+function openOrderForm(gi) {
+  const g = state.data.sheets[state.sheet].groups[gi];
+  const f = $('#orderForm form');
+  f.dataset.g = gi;
+  f.shop.value = g.order.shop || '';
+  f.url.value = g.order.url || '';
+  $('#orderForm .og').textContent = g.name;
+  $('#orderForm').classList.add('on');
+  f.shop.focus();
+}
+
+$('#orderForm form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target;
+  const sheet = state.data.sheets[state.sheet];
+  const g = sheet.groups[Number(f.dataset.g)];
+  const btn = f.querySelector('[type=submit]');
+  btn.disabled = true;
+  try {
+    const res = await call('saveOrder', state.pin, { sheet: sheet.name, group: g.name, shop: f.shop.value, url: f.url.value });
+    g.order.shop = res.shop; g.order.url = res.url;
+    $('#orderForm').classList.remove('on');
+    render(); toast('บันทึกแล้ว');
+  } catch (err) { toast(err.message, 5000); }
+  btn.disabled = false;
+});
+
+document.addEventListener('change', async e => {
+  const t = e.target;
+  if (!t.dataset || !t.dataset.date || !t.value) return;
+  const [gi, k] = t.dataset.date.split(':').map(Number);
+  const sheet = state.data.sheets[state.sheet];
+  const g = sheet.groups[gi];
+  try {
+    toast('กำลังบันทึกวันที่…', 30000);
+    const res = await call('saveOrderDate', state.pin, { sheet: sheet.name, group: g.name, step: k, date: t.value });
+    g.order.dates = res.dates;
+    render();
+    toast('แก้วันที่ ' + STEPS[k].name + ' แล้ว');
+  } catch (err) { toast(err.message, 5000); render(); }
+});
+
+async function setStep(gi, n) {
+  const sheet = state.data.sheets[state.sheet];
+  const g = sheet.groups[gi];
+  const status = g.order.status === n ? n - 1 : n;
+  try {
+    toast('กำลังบันทึก…', 30000);
+    const res = await call('saveOrderStatus', state.pin, { sheet: sheet.name, group: g.name, status });
+    g.order.status = res.status; g.order.dates = res.dates;
+    render();
+    toast(status ? 'สถานะ: ' + STEPS[status - 1].name : 'ล้างสถานะแล้ว');
+  } catch (e) { toast(e.message, 5000); }
+}
+
+async function removePhoto(id) {
+  if (!confirm('ลบรูปนี้?')) return;
+  try {
+    await call('deletePhoto', state.pin, id);
+    state.data.sheets.forEach(s => s.groups.forEach(g => {
+      g.photos = g.photos.filter(p => p.id !== id);
+      g.order.photos = g.order.photos.filter(p => p.id !== id);
+      g.rows.forEach(r => r.photos = r.photos.filter(p => p.id !== id));
+    }));
+    render(); toast('ลบรูปแล้ว');
+  } catch (e) { toast(e.message); }
+}
+
+/** ย่อรูปให้ด้านยาวไม่เกิน 1600px ก่อนอัปโหลด (เร็วขึ้น ประหยัดพื้นที่) */
+function shrink(file, max = 1600) {
+  return new Promise((ok, fail) => {
+    if (!/^image\//.test(file.type)) return fail(new Error(file.name + ' ไม่ใช่รูปภาพ'));
+    const reader = new FileReader();
+    reader.onerror = () => fail(new Error('อ่านไฟล์ไม่ได้'));
+    reader.onload = () => {
+      if (file.type === 'image/gif') return ok(reader.result);
+      const img = new Image();
+      img.onerror = () => fail(new Error('เปิดรูปไม่ได้ (ลองใช้ JPG/PNG)'));
+      img.onload = () => {
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        ok(c.toDataURL('image/jpeg', 0.85));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+load();
+</script>
+</body>
+</html>
