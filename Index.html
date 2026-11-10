@@ -197,7 +197,7 @@ function groupHtml(g, gi, rows) {
   const paid = filled.filter(r => badgeClass('pay', r.pay) === 'b-ok').length;
   const sent = filled.filter(r => badgeClass('sent', r.sent) === 'b-info').length;
   const free = g.rows.length - filled.length;
-  const covers = g.covers.map(u => '<div class="ph"><img loading="lazy" src="' + esc(u) + '" data-full="' + esc(u) + '"></div>').join('')
+  const covers = g.covers.map(u => '<div class="ph"><img class="sheet-img" loading="lazy" src="' + esc(u) + '" data-full="' + esc(u) + '"></div>').join('')
     + g.photos.map(p => photoHtml(p, true)).join('')
     + (state.data.isAdmin ? '<button class="add" data-add-group="' + gi + '">＋ รูปรอบ</button>' : '');
   return '<section class="group">' +
@@ -500,6 +500,12 @@ function shrink(file, max = 1600) {
     reader.readAsDataURL(file);
   });
 }
+
+// รูปที่ดึงจากชีต (รูปลอยที่อัปโหลดจากเครื่อง) มักเปิดนอกชีตไม่ได้ — ซ่อนแทนการโชว์กรอบรูปเสีย
+document.addEventListener('error', e => {
+  const img = e.target;
+  if (img.tagName === 'IMG' && img.classList.contains('sheet-img')) img.closest('.ph').remove();
+}, true);
 
 load();
 </script>
